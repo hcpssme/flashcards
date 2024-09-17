@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiple Choice Quiz</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f4f4f9;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+        }
+
+        .quiz-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            border: 1px solid #007bff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background-color: white;
+        }
+
+        .question {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .options {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .options li {
+            margin: 8px 0;
+        }
+
+        .options input {
+            margin-right: 10px;
+        }
+
+        .quiz-button {
+            border: none;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .quiz-button:hover {
+            background-color: #0056b3;
+        }
+
+        #startQuizButton {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .feedback {
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .feedback.correct {
+            color: green;
+        }
+
+        .feedback.incorrect {
+            color: red;
+        }
+
+        .summary-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            border: 1px solid #007bff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background-color: white;
+        }
+
+        .summary-section {
+            margin-bottom: 20px;
+        }
+
+        .summary-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .summary-list {
+            list-style-type: none;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="startQuizButton" class="quiz-button" onclick="startQuiz()">Start Quiz</button>
+
+    <div class="quiz-container" id="quizContainer">
+        <div class="question" id="questionText"></div>
+        <ul class="options" id="optionsList"></ul>
+        <button class="quiz-button" onclick="submitAnswer()">Submit Answer</button>
+        <div id="feedback" class="feedback"></div>
+    </div>
+
+    <div class="summary-container" id="summaryContainer">
+        <div class="summary-section">
+            <div class="summary-title">Needs Improvement:</div>
+            <ul id="needsImprovementList" class="summary-list"></ul>
+        </div>
+        <div class="summary-section">
+            <div class="summary-title">Review Again (Optional):</div>
+            <ul id="reviewOptionalList" class="summary-list"></ul>
+        </div>
+        <div class="summary-section">
+            <div class="summary-title">Well Done:</div>
+            <ul id="wellDoneList" class="summary-list"></ul>
+        </div>
+        <button class="quiz-button" onclick="restartQuiz()">Restart Quiz</button>
+    </div>
+
+    <script>
+        const quizData = [
+            { question: "What is the purpose of a colony?", correct: "To make the mother country richer.", options: ["To make the mother country richer.", "To be independent.", "To support local economies.", "To provide military support."] },
+            { question: "What is mercantilism?", correct: "An economic system that increases wealth through exports.", options: ["An economic system that increases wealth through exports.", "A political system of colonies.", "A type of military strategy.", "A form of agriculture."] },
+            { question: "What is salutary neglect?", correct: "England allowed the colonies to self-govern.", options: ["England allowed the colonies to self-govern.", "England heavily taxed the colonies.", "England provided military protection.", "England directly controlled all aspects."] },
+            { question: "What were the Navigation Acts?", correct: "Laws requiring colonial trade on British ships.", options: ["Laws requiring colonial trade on British ships.", "Laws allowing free trade globally.", "Laws to improve shipbuilding.", "Laws banning colonial manufacturing."] },
+            { question: "What is a tariff?", correct: "A tax on imported goods.", options: ["A tax on imported goods.", "A type of colony.", "A form of government.", "A military rank."] },
+            { question: "What are cash crops?", correct: "Crops grown for sale and profit.", options: ["Crops grown for sale and profit.", "Crops grown for personal use.", "Crops that are easy to grow.", "Crops given as tax to England."] },
+            { question: "Which colonies were part of the New England region?", correct: "Massachusetts, Rhode Island, Connecticut, New Hampshire.", options: ["Massachusetts, Rhode Island, Connecticut, New Hampshire.", "New York, New Jersey, Pennsylvania, Delaware.", "Maryland, Virginia, North Carolina, South Carolina, Georgia.", "All of the above."] },
+            { question: "What characterized the Southern colonies' economy?", correct: "Large plantations with cash crops.", options: ["Large plantations with cash crops.", "Fishing and shipbuilding.", "Mining and forestry.", "Manufacturing and trade."] },
+            { question: "Why were the Navigation Acts created?", correct: "To control colonial trade and stop smuggling.", options: ["To control colonial trade and stop smuggling.", "To promote free trade with all nations.", "To reduce England's military costs.", "To allow colonies self-governance."] },
+            { question: "What is the triangular trade?", correct: "A trade route connecting Europe, Africa, and the Americas.", options: ["A trade route connecting Europe, Africa, and the Americas.", "A war strategy used by England.", "A form of colonial government.", "A method of farming."] },
+            { question: "What was the main export from the colonies?", correct: "Raw materials like tobacco and cotton.", options: ["Raw materials like tobacco and cotton.", "Manufactured goods.", "Gold and silver.", "Weapons and ammunition."] },
+            { question: "What were proprietary colonies?", correct: "Colonies governed by individuals granted land by the king.", options: ["Colonies governed by individuals granted land by the king.", "Colonies directly controlled by the king.", "Colonies that were independent.", "Colonies that traded freely."] },
+            { question: "What was the role of colonial assemblies?", correct: "To make local laws and decisions.", options: ["To make local laws and decisions.", "To collect taxes for England.", "To maintain military forces.", "To enforce trade laws."] },
+            { question: "What were charter colonies?", correct: "Colonies with charters allowing them to self-govern.", options: ["Colonies with charters allowing them to self-govern.", "Colonies with royal governors.", "Colonies dependent on England.", "Colonies established for trade."] },
+            { question: "Which colonies were part of the Southern region?", correct: "Maryland, Virginia, North Carolina, South Carolina, Georgia.", options: ["Maryland, Virginia, North Carolina, South Carolina, Georgia.", "Massachusetts, Rhode Island, Connecticut, New Hampshire.", "New York, New Jersey, Pennsylvania, Delaware.", "All of the above."] },
+            { question: "What is the 'mother country' in colonial context?", correct: "The country that controlled and profited from the colonies.", options: ["The country that controlled and profited from the colonies.", "The strongest colony.", "A neighboring colony.", "A military ally."] },
+            { question: "How did England's colonial policies lead to tension?", correct: "Restrictive trade laws and taxes increased resentment.", options: ["Restrictive trade laws and taxes increased resentment.", "England provided too much military aid.", "England allowed too much independence.", "England offered too many benefits."] },
+            { question: "Why did the Southern colonies rely on slavery?", correct: "To provide labor for large plantations.", options: ["To provide labor for large plantations.", "To build ships.", "To trade with England.", "To explore new lands."] },
+            { question: "What challenges did colonies with more freedom face?", correct: "Resistance to crown control due to accustomed independence.", options: ["Resistance to crown control due to accustomed independence.", "Difficulty trading with other nations.", "Lack of natural resources.", "No military support from England."] },
+            { question: "What characterized the economy of New England?", correct: "Fishing, whaling, and shipbuilding.", options: ["Fishing, whaling, and shipbuilding.", "Large plantations.", "Mining.", "Manufacturing textiles."] }
+        ];
+
+        let currentQuizIndex = 0;
+        let incorrectAnswers = [];
+        let struggledAnswers = [];
+        let correctAnswers = [];
+
+        function startQuiz() {
+            document.getElementById('startQuizButton').style.display = 'none';
+            document.getElementById('quizContainer').style.display = 'flex';
+            shuffle(quizData);
+            loadQuestion();
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function loadQuestion() {
+            const quiz = incorrectAnswers.length ? incorrectAnswers[currentQuizIndex] : quizData[currentQuizIndex];
+            document.getElementById('questionText').textContent = quiz.question;
+            const optionsList = document.getElementById('optionsList');
+            optionsList.innerHTML = '';
+            quiz.options.forEach(option => {
+                const li = document.createElement('li');
+                li.innerHTML = `<label><input type="radio" name="option" value="${option}"> ${option}</label>`;
+                optionsList.appendChild(li);
+            });
+            document.getElementById('feedback').textContent = ''; // Clear feedback
+        }
+
+        function submitAnswer() {
+            const selectedOption = document.querySelector('input[name="option"]:checked');
+            if (!selectedOption) {
+                alert("Please select an answer!");
+                return;
+            }
+
+            const currentQuiz = incorrectAnswers.length ? incorrectAnswers[currentQuizIndex] : quizData[currentQuizIndex];
+            if (selectedOption.value === currentQuiz.correct) {
+                document.getElementById('feedback').textContent = "Correct!";
+                document.getElementById('feedback').className = "feedback correct";
+                if (!correctAnswers.includes(currentQuiz) && !struggledAnswers.includes(currentQuiz)) {
+                    correctAnswers.push(currentQuiz);
+                }
+            } else {
+                document.getElementById('feedback').textContent = `Incorrect! Correct answer is "${currentQuiz.correct}".`;
+                document.getElementById('feedback').className = "feedback incorrect";
+                if (!incorrectAnswers.includes(currentQuiz)) {
+                    incorrectAnswers.push(currentQuiz);
+                } else if (!struggledAnswers.includes(currentQuiz)) {
+                    struggledAnswers.push(currentQuiz);
+                }
+                sendToBack();
+            }
+
+            setTimeout(() => {
+                moveToNextQuestion();
+            }, 2000); // Move to next question after 2 seconds
+        }
+
+        function moveToNextQuestion() {
+            if (quizData.length === 0 && incorrectAnswers.length === 0) {
+                displaySummary();
+            } else {
+                if (incorrectAnswers.length) {
+                    currentQuizIndex++;
+                    if (currentQuizIndex >= incorrectAnswers.length) {
+                        currentQuizIndex = 0; // Reset index if at the end of the list
+                    }
+                } else {
+                    quizData.splice(currentQuizIndex, 1);
+                    if (currentQuizIndex >= quizData.length) {
+                        currentQuizIndex = 0;
+                    }
+                }
+                loadQuestion();
+            }
+        }
+
+        function sendToBack() {
+            if (incorrectAnswers.length) {
+                const incorrectQuiz = incorrectAnswers.splice(currentQuizIndex, 1)[0];
+                incorrectAnswers.push(incorrectQuiz);
+            }
+        }
+
+        function displaySummary() {
+            document.getElementById('quizContainer').style.display = 'none';
+            document.getElementById('summaryContainer').style.display = 'flex';
+
+            const needsImprovementList = document.getElementById('needsImprovementList');
+            const reviewOptionalList = document.getElementById('reviewOptionalList');
+            const wellDoneList = document.getElementById('wellDoneList');
+
+            needsImprovementList.innerHTML = incorrectAnswers.map(q => `<li>${q.question}</li>`).join('');
+            reviewOptionalList.innerHTML = struggledAnswers.map(q => `<li>${q.question}</li>`).join('');
+            wellDoneList.innerHTML = correctAnswers.map(q => `<li>${q.question}</li>`).join('');
+        }
+
+        function restartQuiz() {
+            location.reload();
+        }
+    </script>
+
+</body>
+</html>
