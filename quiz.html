@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible="IE=edge">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multiple Choice Quiz</title>
     <style>
@@ -166,11 +166,12 @@
         let incorrectAnswers = [];
         let struggledAnswers = [];
         let correctAnswers = [];
+        let questionQueue = [...quizData]; // Copy of quizData to track questions
 
         function startQuiz() {
             document.getElementById('startQuizButton').style.display = 'none';
             document.getElementById('quizContainer').style.display = 'flex';
-            shuffle(quizData);
+            shuffle(questionQueue); // Shuffle initial questions
             loadQuestion();
         }
 
@@ -182,11 +183,16 @@
         }
 
         function loadQuestion() {
-            const quiz = incorrectAnswers.length ? incorrectAnswers[currentQuizIndex] : quizData[currentQuizIndex];
-            document.getElementById('questionText').textContent = quiz.question;
+            if (questionQueue.length === 0) {
+                displaySummary();
+                return;
+            }
+
+            const currentQuiz = questionQueue[currentQuizIndex];
+            document.getElementById('questionText').textContent = currentQuiz.question;
             const optionsList = document.getElementById('optionsList');
             optionsList.innerHTML = '';
-            quiz.options.forEach(option => {
+            currentQuiz.options.forEach(option => {
                 const li = document.createElement('li');
                 li.innerHTML = `<label><input type="radio" name="option" value="${option}"> ${option}</label>`;
                 optionsList.appendChild(li);
@@ -201,13 +207,14 @@
                 return;
             }
 
-            const currentQuiz = incorrectAnswers.length ? incorrectAnswers[currentQuizIndex] : quizData[currentQuizIndex];
+            const currentQuiz = questionQueue[currentQuizIndex];
             if (selectedOption.value === currentQuiz.correct) {
                 document.getElementById('feedback').textContent = "Correct!";
                 document.getElementById('feedback').className = "feedback correct";
                 if (!correctAnswers.includes(currentQuiz) && !struggledAnswers.includes(currentQuiz)) {
                     correctAnswers.push(currentQuiz);
                 }
+                questionQueue.splice(currentQuizIndex, 1); // Remove correctly answered question
             } else {
                 document.getElementById('feedback').textContent = `Incorrect! Correct answer is "${currentQuiz.correct}".`;
                 document.getElementById('feedback').className = "feedback incorrect";
@@ -216,38 +223,13 @@
                 } else if (!struggledAnswers.includes(currentQuiz)) {
                     struggledAnswers.push(currentQuiz);
                 }
-                sendToBack();
+                questionQueue.push(questionQueue.splice(currentQuizIndex, 1)[0]); // Move question to the back
             }
 
             setTimeout(() => {
-                moveToNextQuestion();
-            }, 2000); // Move to next question after 2 seconds
-        }
-
-        function moveToNextQuestion() {
-            if (quizData.length === 0 && incorrectAnswers.length === 0) {
-                displaySummary();
-            } else {
-                if (incorrectAnswers.length) {
-                    currentQuizIndex++;
-                    if (currentQuizIndex >= incorrectAnswers.length) {
-                        currentQuizIndex = 0; // Reset index if at the end of the list
-                    }
-                } else {
-                    quizData.splice(currentQuizIndex, 1);
-                    if (currentQuizIndex >= quizData.length) {
-                        currentQuizIndex = 0;
-                    }
-                }
+                currentQuizIndex = currentQuizIndex % questionQueue.length; // Adjust index in case of moving questions
                 loadQuestion();
-            }
-        }
-
-        function sendToBack() {
-            if (incorrectAnswers.length) {
-                const incorrectQuiz = incorrectAnswers.splice(currentQuizIndex, 1)[0];
-                incorrectAnswers.push(incorrectQuiz);
-            }
+            }, 2000); // Move to next question after 2 seconds
         }
 
         function displaySummary() {
